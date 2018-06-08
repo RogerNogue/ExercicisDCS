@@ -1,0 +1,293 @@
+ <html> 
+      <head> 
+      <title>DCS - 7</title> 
+
+      </head>
+
+      <body>
+
+      <h1>DCS - Lab 7 - Surfaces</h1>
+
+      <script src="math.min.js"></script>
+      <script src="three.min.js"></script>
+      <script src="OrbitControls.js"></script>
+    
+     <script type="text/javascript">
+        /**
+        * Partially based on code by Ikaros Kappler from http://int2byte.de/public/blog.20160129_Three.js_Basic_Scene_Setup/
+        **/
+        var windowWidth=800.0, windowHeight=600.0;
+        var gutter1 =   [
+                        [{x:-1, y:5, z:2}, {x:-1, y:3, z:0}, {x:1, y:3, z:0}, {x:1, y:5, z:2}], 
+                        [{x:-1, y:3, z:4}, {x:-1, y:1, z:2}, {x:1, y:1, z:2}, {x:1, y:3, z:4}], 
+                        [{x:-1, y:1, z:6}, {x:-1, y:-1, z:4}, {x:1, y:-1, z:4}, {x:1, y:1, z:6}], 
+                        [{x:-1, y:-1, z:8}, {x:-1, y:-3, z:6}, {x:1, y:-3, z:6}, {x:1, y:-1, z:8}]
+                        ];
+        /*
+        for(var i = 0; i < gutter1[0].length; ++i){
+            gutter1[1][i].x = gutter1[0][i].x + gutter1[0][i].x - 0;
+            gutter1[1][i].y = gutter1[0][i].y + gutter1[0][i].y - 1;
+            gutter1[1][i].z = gutter1[0][i].z + gutter1[0][i].z + 1;
+            console.log(gutter1[1][i]);
+        }
+        console.log(gutter1);
+        */
+        var gutter2 = [
+                        [{x:-3, y:10, z:-3}, {x:-2, y:7, z:-5}, {x:2, y:7, z:-5}, {x:3, y:10, z:-3}],
+                        [{x:-3, y:12, z:-5}, {x:-2, y:9, z:-7}, {x:2, y:9, z:-7}, {x:3, y:12, z:-5}],
+                        [{x:-3, y:14, z:-7}, {x:-2, y:11, z:-9}, {x:2, y:11, z:-9}, {x:3, y:14, z:-7}],
+                        [{x:-3, y:16, z:-9}, {x:-2, y:13, z:-11}, {x:2, y:13, z:-11}, {x:3, y:16, z:-9}]
+                        ];
+/*
+        var connector = [
+                        [{x:-1, y:1, z:6}, {x:-1, y:-1, z:4}, {x:1, y:-1, z:4}, {x:1, y:1, z:6}],
+                        [{x:-1, y:3, z:4}, {x:-1, y:1, z:2}, {x:1, y:1, z:2}, {x:1, y:3, z:4}],
+                        [{x:-1, y:5, z:2}, {x:-1, y:3, z:0}, {x:1, y:3, z:0}, {x:1, y:5, z:2}],
+                        [{x:-3, y:10, z:-3}, {x:-2, y:7, z:-5}, {x:2, y:7, z:-5}, {x:3, y:10, z:-3}]
+                        ];
+
+        //for(var j = 1; i < 3; ++j){
+            for(var i = 0; i < connector[0].length; ++i){
+                connector[2][i].x = 4/8*connector[1][i].x + 4/8*connector[3][i].x;
+                connector[2][i].y = 4/8*connector[1][i].y + 4/8*connector[3][i].y;
+                connector[2][i].z = 4/8*connector[1][i].z + 4/8*connector[3][i].z;
+            }
+        //}
+        */
+
+                      
+        var connector = [
+                        [{x:-1, y:5, z:2}, {x:-1, y:3, z:0}, {x:1, y:3, z:0}, {x:1, y:5, z:2}],
+                        [{x:-1, y:5, z:2}, {x:-1, y:3, z:0}, {x:1, y:3, z:0}, {x:1, y:5, z:2}],
+                        [{x:-3, y:10, z:-3}, {x:-2, y:7, z:-5}, {x:2, y:7, z:-5}, {x:3, y:10, z:-3}],
+                        [{x:-3, y:10, z:-3}, {x:-2, y:7, z:-5}, {x:2, y:7, z:-5}, {x:3, y:10, z:-3}]
+                        ];
+        for(var i = 0; i < connector[0].length; ++i){
+            connector[0][i].x = 0.5*gutter1[2][i].x + 0.5*connector[1][i].x;
+            connector[0][i].y = 0.5*gutter1[2][i].y + 0.5*connector[1][i].y;
+            connector[0][i].z = 0.5*gutter1[2][i].z + 0.5*connector[1][i].z;
+            
+            connector[3][i].x = 0.5*connector[2][i].x + 0.5*gutter2[1][i].x;
+            connector[3][i].y = 0.5*connector[2][i].y + 0.5*gutter2[1][i].y;
+            connector[3][i].z = 0.5*connector[2][i].z + 0.5*gutter2[1][i].z;
+
+            gutter2[0][i].x = 0.5*connector[2][i].x + 0.5*gutter2[1][i].x;
+            gutter2[0][i].y = 0.5*connector[2][i].y + 0.5*gutter2[1][i].y;
+            gutter2[0][i].z = 0.5*connector[2][i].z + 0.5*gutter2[1][i].z;
+
+            gutter1[0][i].x = 0.5*gutter1[2][i].x + 0.5*connector[1][i].x;
+            gutter1[0][i].y = 0.5*gutter1[2][i].y + 0.5*connector[1][i].y;
+            gutter1[0][i].z = 0.5*gutter1[2][i].z + 0.5*connector[1][i].z;
+
+
+        }
+        //connector[1] = connector[0];
+        //connector[2] = connector[3];
+        console.log(connector);
+
+        
+        
+        // Create a scene
+        this.scene = new THREE.Scene();
+
+        // Create a camera 
+        // Parameters: vertical field of view, aspect ratio, near-clipping plane, far-clipping plane
+        var camera = new THREE.PerspectiveCamera(45, windowWidth / windowHeight, 0.1, 1000);
+
+        // Create a THREE renderer 
+        this.renderer = new THREE.WebGLRenderer( { antialias : true, alpha:true } );
+        this.shadowMapEnabled = true;
+        this.renderer.setSize(windowWidth, windowHeight);
+        document.body.appendChild(renderer.domElement); // append it to the DOM
+        
+        // position and point the camera to the center of the scene (0,0,0)
+        camera.position.x = 80;
+        camera.position.y = 80;
+        camera.position.z = 80;
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+        // Create light, with same position and direction as camera
+        this.spotLight = new THREE.SpotLight(0xffffff);
+        this.spotLight.position.copy(camera.position)
+        this.spotLight.target.position.copy (camera.lookAt); 
+        scene.add(spotLight);
+
+        
+        /**** Here is where the important stuff is: definition of parametric geometry ****/
+        // Examples of three parametric surface functions
+
+        // Note: the parametric functions will be evaluated only on [0,1] x [0,1]
+        // The function is called like this:
+
+        // for v=0 to 1 step ...
+        //    for u=0 to 1  step...
+        //        call function(u,v)        
+        
+        planeFunction = function(u, v) 
+        {
+            var s = this.functionExtent; //stretch value
+            var x = s*u;
+            var z = s*v;
+            var y = 15*(u+v);
+            return new THREE.Vector3(x, y, z);
+        };
+        
+        waveFunction = function (u, v) {
+            var s = this.functionExtent; //stretch value
+            var x = s*u;
+            var z = s*v;
+            var y = 10*Math.sin(2*(u+v)*Math.PI);
+            return new THREE.Vector3(x, y, z);
+        }
+        
+        ellipsoidFunction = function (u, v) {
+            var a=40;
+            var b=20;
+            var c=30;
+            u = u * 2* Math.PI; // scale u to [0, 2PI]
+            v = v * Math.PI; // scale v to [0, PI]
+            var x = a*Math.cos(u)*Math.sin(v);
+            var z = b*Math.sin(u)*Math.sin(v);
+            var y = c*Math.cos(v);
+            return new THREE.Vector3(x, y, z);
+        }
+
+        gutterFunction = function (u, v) {
+            //trobar perpendicular, generar un dels punts i allargar a partir d alla
+            //https://www.gamedev.net/forums/topic/572770-finding-vector-perpendicular-to-line-in-3d/
+            var m, n, i, j, x, y, z;
+            m = 4;
+            n = 4;
+            x = y = z = 0;
+            for(i = 0; i < m; ++i){
+                for(j = 0; j < n; ++j){
+                    var temp = basis(u, i)*basis(v, j);
+                    x += 5*gutter1[i][j].x*temp;
+                    y += 5*gutter1[i][j].y*temp;
+                    z += 5*gutter1[i][j].z*temp;
+
+                }
+            }
+            return new THREE.Vector3(x, y, z);
+        }
+
+        gutterFunction2 = function (u, v) {
+            //trobar perpendicular, generar un dels punts i allargar a partir d alla
+            //https://www.gamedev.net/forums/topic/572770-finding-vector-perpendicular-to-line-in-3d/
+            var m, n, i, j, x, y, z;
+            m = 4;
+            n = 4;
+            x = y = z = 0;
+            for(i = 0; i < m; ++i){
+                for(j = 0; j < n; ++j){
+                    var temp = basis(u, i)*basis(v, j);
+                    x += 5*gutter2[i][j].x*temp;
+                    y += 5*gutter2[i][j].y*temp;
+                    z += 5*gutter2[i][j].z*temp;
+
+                }
+            }
+            return new THREE.Vector3(x, y, z);
+        }
+
+        connectorFunction = function (u, v) {
+            //trobar perpendicular, generar un dels punts i allargar a partir d alla
+            //https://www.gamedev.net/forums/topic/572770-finding-vector-perpendicular-to-line-in-3d/
+            var m, n, i, j, x, y, z;
+            m = 4;
+            n = 4;
+            x = y = z = 0;
+            for(i = 0; i < m; ++i){
+                for(j = 0; j < n; ++j){
+                    var temp = basis(u, i)*basis(v, j);
+                    x += 5*connector[i][j].x*temp;
+                    y += 5*connector[i][j].y*temp;
+                    z += 5*connector[i][j].z*temp;
+
+                }
+            }
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function basis(t, i){
+            var n = 3;
+            return (math.factorial(n)/(math.factorial(i)*math.factorial(n-i)) * math.pow(t, i) * math.pow((1-t), (n-i)));
+        }
+        
+        // Function to create the actual mesh
+        function createMesh(geom) {
+            // Translate geometry to center of scene
+            //geom.applyMatrix(new THREE.Matrix4().makeTranslation(-functionExtent/2, 0, -functionExtent/2));
+            // Assign material
+            var meshMaterial = new THREE.MeshLambertMaterial({color:0xff5555, wireframe:false}); // You can disable wireframe
+            meshMaterial.side = THREE.DoubleSide;
+            // create a multimaterial and return it
+            return THREE.SceneUtils.createMultiMaterialObject(geom, [meshMaterial]);
+        }
+    
+        // Create and add parametric surface function (i.e., parametric geometry) to scene
+        this.functionExtent = 60;
+        var slides = functionExtent/3; //Number of evaluations on first variable
+        var stacks = functionExtent/3; //Number of evaluations on second variable
+        
+        var parametricFunction = gutterFunction; // Example 1
+        var parametricFunction2 = gutterFunction2; // Example 1
+        var parametricFunction3 = connectorFunction; // Example 1
+        //var parametricFunction = waveFunction;  // Example 2
+        //var parametricFunction = ellipsoidFunction;  // Example 3
+        
+        // Create parametric geometry based on parametric function
+        var graphGeometry = new THREE.ParametricGeometry(parametricFunction, slides, stacks);
+        var graphGeometry2 = new THREE.ParametricGeometry(parametricFunction2, slides, stacks);
+        var graphGeometry3 = new THREE.ParametricGeometry(parametricFunction3, slides, stacks);
+        
+        // Add it to scene
+        this.scene.add(createMesh(graphGeometry));
+        this.scene.add(createMesh(graphGeometry2));
+        this.scene.add(createMesh(graphGeometry3));
+
+        /****************************/
+        
+        // Auxiliary things
+        
+        // Add grid helper
+        var gridExtent=80;
+        var gridHelper = new THREE.GridHelper( gridExtent, gridExtent/10 );
+        gridHelper.colorGrid = 0xE8E8E8;
+        this.scene.add( gridHelper );
+
+        // Add an axis helper
+        var ah = new THREE.AxisHelper(50);
+        ah.position.y -= 0.1;  // The axis helper should not interfere with the grid helper
+        this.scene.add( ah );
+
+        // Add an orbit control helper, to navigate scence with mosue
+        var _self = this;
+        this.orbitControls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
+        // Always move the point light with the camera. Looks much better ;)
+        this.orbitControls.addEventListener( 'change',
+        function() { _self.spotLight.position.copy(_self.camera.position); }
+        );
+        this.orbitControls.enableDamping = true;
+        this.orbitControls.dampingFactor = 1.0;
+        this.orbitControls.enableZoom    = true;
+        this.orbitControls.target.copy(new THREE.Vector3(0, 0, 0));
+
+        // This is the basic render function. It will be called perpetual, again and again,
+        // depending on your machines possible frame rate.
+        this._render = function () {
+            // Pass the render function itself
+            requestAnimationFrame(this._render);
+            this.renderer.render(this.scene, this.camera);
+        };
+
+        // Call the rendering function. This will cause an infinite recursion
+        this._render();
+        
+      </script>
+      <br>
+      Note: X axis is red, Y axis is green, Z axis is blue.
+      Each grid square on the plane Y=0 has size 10x10.
+      </body>
+
+      </html>

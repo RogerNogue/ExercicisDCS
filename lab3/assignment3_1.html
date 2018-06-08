@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>DCS - 3</title>
+
+    <!--- Math.js library, for matrix manipulation, and many other things-->
+    <script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
+</head>
+
+<body>
+
+<h1>DCS - 3.1. Cubic Lagrange interpolation</h1>
+<p style="color:red;">Red color: Uniform</p>
+<p style="color:blue;">Blue color: Non uniform: distances</p>
+<p style="color:green;">Green color: Non uniform: value of the Y coordinate component of each point</p>
+
+<canvas id="canvas1" height="600" width="800" class="bezier"  style="border:1px solid #d3d3d3;"></canvas>
+<br>
+
+<script type="text/javascript">
+
+    /*
+    * Part of this code is based on:
+        * http://blogs.sitepoint.com/html5-canvas-draw-quadratic-curves/
+        * http://blogs.sitepoint.com/html5-canvas-draw-bezier-curves/
+    */
+
+    var canvas1, context1, points, myTransformation, style, style2, style3, style4, drag = null, draggedPoint, uniformPoints, uniformPoints2, uniformPoints3;
+
+    points = [{ x:100, y:100 },{ x:200, y:300 },{ x:350, y:200 }, { x:600, y:350 }];
+    uniformPoints = [];
+    
+
+    function init() {
+
+        myTransformation = function(p){return p}; //Identity transform
+
+        // default styles
+        style = {
+            curve:	{ width: 6, color: "#333" },
+            line:	{ width: 1, color: "#C00" },
+            point: { radius: 10, width: 2, color: "#900", fill: "rgba(200,200,200,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+        style2 = {
+            curve:	{ width: 6, color: "#f00" },
+            line:	{ width: 1, color: "#f00" },
+            point: { radius: 5, width: 2, color: "#f00", fill: "rgba(200,0,0,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+        style3 = {
+            curve:	{ width: 6, color: "#00f" },
+            line:	{ width: 1, color: "#00f" },
+            point: { radius: 5, width: 2, color: "#00f", fill: "rgba(0,0,200,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+        style4 = {
+            curve:	{ width: 6, color: "#0f0" },
+            line:	{ width: 1, color: "#0f0" },
+            point: { radius: 5, width: 2, color: "#0f0", fill: "rgba(0,200,0,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+
+        // line style defaults
+        context1.lineCap = "round";
+        context1.lineJoin = "round";
+
+        // event handlers (only canvas1)
+        canvas1.onmousedown = dragStart;
+        canvas1.onmousemove = dragging;
+        canvas1.onmouseup = canvas1.onmouseout = dragEnd;
+
+        drawCanvas();
+    }
+
+
+    /**
+     Basic drawing methods
+     **/
+
+
+    // draw canvas
+    function drawCanvas() {
+        // Clear everything
+        context1.clearRect(0, 0, canvas1.width, canvas1.height);  // Clear canvas
+
+        // Background grids
+        drawGrid(context1,canvas1.width, canvas1.height); // Draw background grid
+
+        // Curve through points and vertices
+        drawCurve(context1, style, points); // Draw curve
+        drawVertices(context1, style, points); // Draw vertices as circles
+        lagrangePolin();
+
+    }
+
+
+    // Draw a background grid
+    function drawGrid(myContext,bw,bh){
+        var delta = 50; // grid cell size
+
+        for (var x = 0; x <= bw; x += delta) {
+            myContext.moveTo(x, 0);
+            myContext.lineTo(x, bh);
+        }
+
+        for (var y = 0; y <= bh; y += delta) {
+            myContext.moveTo(0, y);
+            myContext.lineTo(bw , y);
+        }
+
+        myContext.lineWidth = 1;
+        myContext.strokeStyle = "lightgray";
+        myContext.stroke();
+
+        myContext.strokeStyle = "black";
+        myContext.font = "12px Arial";
+        myContext.fillText("(0,0)",2,12);
+
+    }
+
+    // Draws a polygonal curve connecting the points, after applying the given transformation
+    function drawCurve(ctx, style, points, transformation) {
+        // The transformation is optional. If none provided, use identity transform
+        if (transformation===undefined) {
+            transformation = function(p){return p}; //Identity transform
+        }
+
+        // Draw curve
+        ctx.lineWidth = style.curve.width;
+        ctx.strokeStyle = style.curve.color;
+        ctx.beginPath();
+        var firstPoint = transformation(points[0]);
+        var currentPoint;
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+        for (var i = 0; i < points.length; i++) {
+            currentPoint =  transformation(points[i]);
+            ctx.lineTo(currentPoint.x, currentPoint.y);
+            ctx.moveTo(currentPoint.x, currentPoint.y);
+        }
+        ctx.stroke();
+    }
+
+    // Draw circles around vertices to facilitate drag and drop
+    function drawVertices (ctx, style, points) {
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            ctx.lineWidth = style.point.width;
+            ctx.strokeStyle = style.point.color;
+            ctx.fillStyle = style.point.fill;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, style.point.radius, style.point.arc1, style.point.arc2, true);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+
+    /**
+     Methods to allow dragging transformedPoints around
+     **/
+
+    // start dragging
+    function dragStart(e) {
+        e = mousePos(e);
+        var dx, dy;
+        for (var i=0; i<points.length;i++) {
+            dx = points[i].x - e.x;
+            dy = points[i].y - e.y;
+            if ((dx * dx) + (dy * dy) < style.point.radius * style.point.radius) {
+                drag = i;
+                draggedPoint = e;
+                canvas1.style.cursor = "move";
+                return;
+            }
+        }
+    }
+
+    // dragging
+    function dragging(e) {
+        if (drag!=null) {
+            e = mousePos(e);
+            points[drag].x += e.x - draggedPoint.x;
+            points[drag].y += e.y - draggedPoint.y;
+            draggedPoint = e;
+            drawCanvas();
+        }
+    }
+
+    // end dragging
+    function dragEnd(e) {
+        drag = null;
+        canvas1.style.cursor = "default";
+        drawCanvas();
+    }
+
+    // event parser
+    function mousePos(event) {
+        event = (event ? event : window.event);
+        return {
+            x: event.pageX - canvas1.offsetLeft,
+            y: event.pageY - canvas1.offsetTop
+        }
+    }
+
+    
+     function lagrangePolin(){
+     	uniformParam();
+     	nonUniformDistance();
+     	nonUniformValueOfY();
+
+     }
+
+     function uniformParam(){
+        uniformPoints = [];
+     	numPoints = points.length;
+     	var interv = 1/3;
+     	var step = 0.01;
+     	for(j=0.;j<=(1+step);j+=step){
+            uniformPoints.push(lagrange4(j, interv));
+		}
+		//console.log(uniformPoints);
+        drawCurve(context1, style2, uniformPoints); // Draw curve
+        //drawVertices(context1, style2, uniformPoints); // Draw vertices as circles
+     }
+
+     function nonUniformDistance(){
+     	//calcular distancies de cada punt/distancia total i fer ho servir com a interval
+     	uniformPoints2 = [];
+		var interv = calcDists();
+     	var step = 0.01;
+     	var j = 0;
+     	var cont = 0.;
+     	//console.log("intervals = " + interv);
+     	for(j=0.;j<=(1+step);j+=step){
+            uniformPoints2.push(lagrangeNonUniform(j, interv));
+		}
+		//console.log(uniformPoints2);
+        drawCurve(context1, style3, uniformPoints2); // Draw curve
+        //drawVertices(context1, style3, uniformPoints2); // Draw vertices as circles
+
+     }
+
+     function nonUniformValueOfY(){
+     	//sums the entire value of Y of every point and gets the parto of every point
+     	uniformPoints3 = [];
+     	var interv = calcYValues();
+     	var step = 0.01;
+     	var j = 0;
+     	var cont = 0.;
+     	//console.log("intervals = " + interv);
+     	for(j=0.;j<=(1+step);j+=step){
+            uniformPoints3.push(lagrangeNonUniform(j, interv));
+		}
+		//console.log(uniformPoints2);
+        drawCurve(context1, style4, uniformPoints3);
+
+     }
+
+     function calcYValues(){
+     	var interv = [];
+     	var yValues = [];
+     	var totalYValues = 0.;
+     	for(i = 0; i < (points.length - 1); ++i){
+     		yValues[i] = points[i].y;
+     		totalYValues += points[i].y;
+     	}
+     	for(i = 0; i < (points.length - 1); ++i){
+     		interv[i] = yValues[i]/totalYValues;
+     	}
+        for(i = 1; i < interv.length; ++i){
+            interv[i] += interv[i-1];
+        }
+     	return interv;
+     }
+
+     function calcDists(){
+     	//TODO
+     	var interv = [];
+     	var distances = [];
+     	var totaldist = 0;
+     	for(i = 0; i < (points.length - 1); ++i){
+     		var temp = math.sqrt(math.pow(points[i].x - points[i+1].x, 2) + math.pow(points[i].y - points[i+1].y, 2));
+     		distances[i] = temp;
+     		totaldist += temp;
+     	}
+     	for(i = 0; i < distances.length; ++i){
+     		interv[i] = distances[i]/totaldist;
+     	}
+     	
+     	for(i = 1; i < interv.length; ++i){
+     		interv[i] += interv[i-1];
+     	}
+     	//interv.unshift(0.);
+     	return interv;
+
+     }
+
+     function nonUniformAux(){
+     	
+     }
+
+    function lagrange4(val, interv){
+    	//https://www.youtube.com/watch?v=O8sRg-tJTbA
+    	var v1, v2, v3, v4;
+    	v1 = ((val-interv)/(0-interv)*(val-2*interv)/(0-2*interv)*(val-1)/(0-1));
+    	//console.log("v1 = " + v1 + ". val = " + val + ", interv = " + interv + ", points 0 = " + points[0]);
+    	//uniformPoints.push({x:v1*points[0].x, y:v1*points[0].y});
+    	v2 = ((val-0)/(interv-0)*(val-2*interv)/(interv-2*interv)*(val-1)/(interv-1));
+    	//uniformPoints.push({x:v2*points[1].x, y:v2*points[1].y});
+    	v3 = ((val-0)/(2*interv-0)*(val-interv)/(2*interv-interv)*(val-1)/(2*interv-1));
+    	//uniformPoints.push({x:v3*points[2].x, y:v3*points[2].y});
+    	v4 = ((val-0)/(1-0)*(val-interv)/(1-interv)*(val-2*interv)/(1-2*interv));
+    	//uniformPoints.push({x:v4*points[3].x, y:v4*points[3].y});
+    	var p = {x:v1*points[0].x+v2*points[1].x+v3*points[2].x+v4*points[3].x , y:v1*points[0].y+v2*points[1].y+v3*points[2].y+v4*points[3].y}
+    	return p;
+    	//console.log(uniformPoints);
+
+    }
+
+    function lagrangeNonUniform(val, interv){
+    	//https://www.youtube.com/watch?v=O8sRg-tJTbA
+    	//console.log("non uniform, valors intervs = " + interv);
+    	var v1, v2, v3, v4;
+        v1 = ((val-interv[0])/(0-interv[0])*   (val-interv[1])/(0-interv[1])*            (val-interv[2])/(0-interv[2]));
+        v2 = ((val-0)/(interv[0]-0)*           (val-interv[1])/(interv[0]-interv[1])*    (val-interv[2])/(interv[0]-interv[2]));
+        v3 = ((val-0)/(interv[1]-0)*           (val-interv[0])/(interv[1]-interv[0])*    (val-interv[2])/(interv[1]-interv[2]));
+        v4 = ((val-0)/(interv[2]-0)*           (val-interv[0])/(interv[2]-interv[0])*    (val-interv[1])/(interv[2]-interv[1]));
+    	var p = {x:v1*points[0].x+v2*points[1].x+v3*points[2].x+v4*points[3].x , y:v1*points[0].y+v2*points[1].y+v3*points[2].y+v4*points[3].y}
+    	//console.log("valor p.x = " + p.x + ", valor p.y = " + p.y);
+    	return p;
+
+    }
+
+     /**
+     * Start ("main method")
+     */
+
+    // Assign canvas and context variables
+    canvas1 = document.getElementById("canvas1");
+    context1 = canvas1.getContext("2d");
+
+    init();
+
+    /**
+     * Auxiliary functions
+     */
+
+
+</script>
+</body>
+</html>

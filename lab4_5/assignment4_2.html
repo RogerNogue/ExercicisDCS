@@ -1,0 +1,319 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>DCS - 4-5</title>
+
+    <!--- Math.js library, for matrix manipulation, and many other things- -->
+    <script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
+</head>
+
+<body>
+
+<h1>DCS - 4-5. Cubic spline interpolation</h1>
+
+<canvas id="canvas1" height="600" width="800" class="bezier"  style="border:1px solid #d3d3d3,"></canvas>
+
+<br>
+<h3>Clampled cubic spline</h3>
+<div id="valuesInput" style="">
+	Vector 0 values: 
+		<input type="text" name="vec01" value="-1" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode == 46 || event.charCode == 45">
+		<input type="text" name="vec02" value="-1" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode == 46 || event.charCode == 45">
+	<br>
+	Vector n values: 
+		<input type="text" name="vecn1" value="-1" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode == 46 || event.charCode == 45">
+		<input type="text" name="vecn2" value="-1" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode == 46 || event.charCode == 45">
+	<p>
+	If both values of both vectors are -1, the function will be executed with the default values given in the assignment.
+	</p>
+	<button type="button" onclick="doCubicSpline()">Render</button>
+</div>
+<br>
+<br>
+<button type="button" onclick="doRelaxedCubicSpline()">Draw relaxed cubic spline</button>
+
+<br>
+
+<script type="text/javascript">
+
+    /*
+    * Part of this code is based on:
+        * http://blogs.sitepoint.com/html5-canvas-draw-quadratic-curves/
+        * http://blogs.sitepoint.com/html5-canvas-draw-bezier-curves/
+    */
+
+    var canvas1, context1, points, myTransformation, style, drag = null, draggedPoint;
+
+	points = [{ x:300, y:200 },{ x:500, y:200 },{ x:500, y:400 },{ x:300, y:400 }];
+
+    function init() {
+
+        myTransformation = function(p){return p}; //Identity transform
+
+        // default styles
+        style = {
+            curve:	{ width: 6, color: "#333" },
+            line:	{ width: 1, color: "#C00" },
+            point: { radius: 10, width: 2, color: "#900", fill: "rgba(200,200,200,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+        style2 = {
+            curve:	{ width: 6, color: "#f00" },
+            line:	{ width: 1, color: "#f00" },
+            point: { radius: 10, width: 2, color: "#f00", fill: "rgba(200,0,0,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+        style3 = {
+            curve:	{ width: 6, color: "#0f0" },
+            line:	{ width: 1, color: "#0f0" },
+            point: { radius: 10, width: 2, color: "#0f0", fill: "rgba(0,200,0,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+
+        // line style defaults
+        context1.lineCap = "round";
+        context1.lineJoin = "round";
+
+        // event handlers (only canvas1)
+        canvas1.onmousedown = dragStart;
+        canvas1.onmousemove = dragging;
+        canvas1.onmouseup = canvas1.onmouseout = dragEnd;
+
+        drawCanvas();
+    }
+
+
+    /**
+     Basic drawing methods
+     **/
+
+
+    // draw canvas
+    function drawCanvas() {
+        // Clear everything
+        context1.clearRect(0, 0, canvas1.width, canvas1.height);  // Clear canvas
+
+        // Background grids
+        drawGrid(context1,canvas1.width, canvas1.height); // Draw background grid
+
+        // Curve through points and vertices
+        drawCurve(context1, style, points); // Draw curve
+        drawVertices(context1, style, points); // Draw vertices as circles
+
+    }
+
+
+    // Draw a background grid
+    function drawGrid(myContext,bw,bh){
+        var delta = 50; // grid cell size
+
+        for (var x = 0; x <= bw; x += delta) {
+            myContext.moveTo(x, 0);
+            myContext.lineTo(x, bh);
+        }
+
+        for (var y = 0; y <= bh; y += delta) {
+            myContext.moveTo(0, y);
+            myContext.lineTo(bw , y);
+        }
+
+        myContext.lineWidth = 1;
+        myContext.strokeStyle = "lightgray";
+        myContext.stroke();
+
+        myContext.fillStyle = "black";
+        myContext.font = "12px Arial";
+        myContext.fillText("(0,0)",2,12);
+
+    }
+
+    // Draws a polygonal curve connecting the points, after applying the given transformation
+    function drawCurve(ctx, style, points, transformation) {
+        // The transformation is optional. If none provided, use identity transform
+        if (transformation===undefined) {
+            transformation = function(p){return p}; //Identity transform
+        }
+
+        // Draw curve
+        ctx.lineWidth = style.curve.width;
+        ctx.strokeStyle = style.curve.color;
+        ctx.beginPath();
+        var firstPoint = transformation(points[0]);
+        var currentPoint;
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+        for (var i = 0; i < points.length; i++) {
+            currentPoint =  transformation(points[i]);
+            ctx.lineTo(currentPoint.x, currentPoint.y);
+            ctx.moveTo(currentPoint.x, currentPoint.y);
+        }
+        ctx.stroke();
+    }
+
+    // Draw circles around vertices to facilitate drag and drop
+    function drawVertices (ctx, style, points) {
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            ctx.lineWidth = style.point.width;
+            ctx.strokeStyle = style.point.color;
+            ctx.fillStyle = style.point.fill;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, style.point.radius, style.point.arc1, style.point.arc2, true);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+
+    /**
+     Methods to allow dragging transformedPoints around
+     **/
+
+    // start dragging
+    function dragStart(e) {
+        e = mousePos(e);
+        var dx, dy;
+        for (var i=0; i<points.length;i++) {
+            dx = points[i].x - e.x;
+            dy = points[i].y - e.y;
+            if ((dx * dx) + (dy * dy) < style.point.radius * style.point.radius) {
+                drag = i;
+                draggedPoint = e;
+                canvas1.style.cursor = "move";
+                return;
+            }
+        }
+    }
+
+    // dragging
+    function dragging(e) {
+        if (drag!=null) {
+            e = mousePos(e);
+            points[drag].x += e.x - draggedPoint.x;
+            points[drag].y += e.y - draggedPoint.y;
+            draggedPoint = e;
+            drawCanvas();
+        }
+    }
+
+    // end dragging
+    function dragEnd(e) {
+        drag = null;
+        canvas1.style.cursor = "default";
+        drawCanvas();
+    }
+
+    // event parser
+    function mousePos(event) {
+        event = (event ? event : window.event);
+        return {
+            x: event.pageX - canvas1.offsetLeft,
+            y: event.pageY - canvas1.offsetTop
+        }
+    }
+
+    /**
+     * Start ("main method")
+     */
+
+    // Assign canvas and context variables
+    canvas1 = document.getElementById("canvas1");
+    context1 = canvas1.getContext("2d");
+
+    init();
+
+    /**
+     * Auxiliary functions
+     */
+	 
+    function doCubicSpline() {
+        var v0 = [document.getElementsByName('vec01')[0].value, document.getElementsByName('vec02')[0].value];
+        var vn = [document.getElementsByName('vecn1')[0].value, document.getElementsByName('vecn2')[0].value];
+        if((v0[0] == -1 && v0[1] == -1) && (vn[0] == -1 && vn[1] == -1)){
+        	v0 = [200, -200];
+        	vn = [-200, -200];
+        }
+        var curvePoints = [];
+        var defaultMat = math.matrix([[1, 0, 0, 0],[1, 4, 1, 0], [0, 1, 4, 1], [0, 0, 0, 1]]);
+        var v1, v2;
+        v1 = [3*(points[2].x - points[0].x), 3*(points[2].y - points[0].y)];
+        v2 = [3*(points[3].x - points[1].x), 3*(points[3].y - points[1].y)];
+        //console.log("v0 = " + v0 + ", v1 = " + v1 + ", v2 = " + v2 + ", vn =" + vn);
+        var matPoints = math.matrix([v0, v1, v2, vn]);
+        var defaultInverse = math.inv(defaultMat)
+        var tangents = math.multiply(defaultInverse, matPoints);
+        var step = 0.01;
+        for(var i = 0; i < (points.length - 1); ++i){
+        	var v0aux, v1aux;
+        	v0aux = [tangents.get([i, 0]), tangents.get([i, 1])];
+        	v1aux = [tangents.get([i+1, 0]), tangents.get([i+1, 1])];
+
+	        for(var j = 0; j < 1; j = j+step){
+				var p = hermitMult(points[i], points[i+1], v0aux, v1aux, j);
+	            
+	            var temp = {x:p[0][0], y:p[0][1]};
+	            curvePoints.push(temp);
+	        }
+	    }   
+	    drawCurve(context1, style2, curvePoints); // Draw curve
+    }
+
+    function hermitMult(p0, p1, v0, v1, t){
+        var temp1, temp2;
+        temp1 = Math.pow(t, 3);
+        temp2 = Math.pow(t, 2);
+        timesMatrix = [[temp1, temp2, t, 1]];
+        hermitMatrix = [[2, -2, 1, 1], [-3, 3, -2, -1], [0, 0, 1, 0], [1, 0, 0, 0]];
+        valuesMatrix = [[p0.x, p0.y], [p1.x, p1.y], [v0[0], v0[1]], [v1[0], v1[1]]];
+        var sol1 = multiply(timesMatrix, hermitMatrix);
+        var solfinal = multiply(sol1, valuesMatrix);
+        //console.log(solfinal);
+        return solfinal;
+    }
+    
+    function multiply(a, b) {
+        var aNumRows = a.length, aNumCols = a[0].length,
+        bNumRows = b.length, bNumCols = b[0].length,
+        m = [];  // initialize array of rows
+        for (var r = 0; r < aNumRows; ++r) {
+            m[r] = new Array(bNumCols); // initialize the current row
+            for (var c = 0; c < bNumCols; ++c) {
+                m[r][c] = 0;             // initialize the current cell
+                for (var i = 0; i < aNumCols; ++i) {
+                    m[r][c] += a[r][i] * b[i][c];
+                }
+            }
+        }
+        return m;
+    }
+	
+	function doRelaxedCubicSpline() {
+        var curvePoints2 = [];
+        var defaultMat = math.matrix([[2, 1, 0, 0],[1, 4, 1, 0], [0, 1, 4, 1], [0, 0, 1, 2]]);
+        var v0, v1, v2, v3;
+        v0 = [3*(points[1].x - points[0].x), 3*(points[1].y - points[0].y)];
+        v1 = [3*(points[2].x - points[0].x), 3*(points[2].y - points[0].y)];
+        v2 = [3*(points[3].x - points[1].x), 3*(points[3].y - points[1].y)];
+        vn = [3*(points[3].x - points[2].x), 3*(points[3].y - points[2].y)];
+        //console.log("v0 = " + v0 + ", v1 = " + v1 + ", v2 = " + v2 + ", vn =" + vn);
+        var matPoints = math.matrix([v0, v1, v2, vn]);
+        var defaultInverse = math.inv(defaultMat)
+        var tangents = math.multiply(defaultInverse, matPoints);
+        var step = 0.01;
+        for(var i = 0; i < (points.length - 1); ++i){
+        	var v0aux, v1aux;
+        	v0aux = [tangents.get([i, 0]), tangents.get([i, 1])];
+        	v1aux = [tangents.get([i+1, 0]), tangents.get([i+1, 1])];
+
+	        for(var j = 0; j < 1; j = j+step){
+				var p = hermitMult(points[i], points[i+1], v0aux, v1aux, j);
+	            
+	            var temp = {x:p[0][0], y:p[0][1]};
+	            curvePoints2.push(temp);
+	        }
+	    }   
+	    drawCurve(context1, style3, curvePoints2); // Draw curve
+    }
+
+
+
+</script>
+</body>
+</html>

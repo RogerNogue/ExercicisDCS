@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>DCS - 3</title>
+
+    <!--- Math.js library, for matrix manipulation, and many other things-->
+    <script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
+</head>
+
+<body>
+
+<h1>DCS - 3.2. Runge's phenomenon</h1>
+
+Input value of n: <input type="text" name="startRange" value="0" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode == 46 || event.charCode == 45">
+<button type="button" onclick="lagrangeCalc()">Render</button>
+<br>
+
+<canvas id="canvas1" height="600" width="800" class="bezier"  style="border:1px solid #d3d3d3;"></canvas>
+<br>
+
+<script type="text/javascript">
+
+    /*
+    * Part of this code is based on:
+        * http://blogs.sitepoint.com/html5-canvas-draw-quadratic-curves/
+        * http://blogs.sitepoint.com/html5-canvas-draw-bezier-curves/
+    */
+
+    var canvas1, context1, points, myTransformation, style, style2, drag = null, draggedPoint, range0, range1, lagrangePoints;
+    lagrangePoints = [];
+
+
+    function init() {
+
+        myTransformation = function(p){return p}; //Identity transform
+
+        // default styles
+        style = {
+            curve:  { width: 6, color: "#333" },
+            line:   { width: 1, color: "#C00" },
+            point: { radius: 5, width: 2, color: "0", fill: "rgba(0,0,200,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+        style2 = {
+            curve:  { width: 6, color: "#00f" },
+            line:   { width: 1, color: "#00f" },
+            point: { radius: 10, width: 2, color: "#00f", fill: "rgba(0,0,200,0.8)", arc1: 0, arc2: 2 * Math.PI }
+        }
+        style3 = {
+            curve:  { width: 6, color: "#0f0" },
+            line:   { width: 1, color: "#0f0" },
+            point: { radius: 5, width: 2, color: "0", fill: "rgba(0,200,0,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+
+        // line style defaults
+        context1.lineCap = "round";
+        context1.lineJoin = "round";
+        context1.translate(canvas1.width/2,canvas1.height/2);
+
+        // event handlers (only canvas1)
+        /*
+        canvas1.onmousedown = dragStart;
+        canvas1.onmousemove = dragging;
+        canvas1.onmouseup = canvas1.onmouseout = dragEnd;
+        */
+
+        // TODO: This is just a stub
+        // Generate the correct points and interpolate them
+        //f(x) = 1/(1+25*pow(x, 2))
+        points = new Array();
+        for (var i=-10;i<10;i+=0.01) {
+            points.push({x:i,y:(1/(1+25*Math.pow(i, 2)))});
+        }
+
+        drawCanvas();
+    }
+
+
+    /**
+     Basic drawing methods
+     **/
+
+
+    // draw canvas
+    function drawCanvas() {
+        // Clear everything
+        context1.clearRect(0, 0, canvas1.width, canvas1.height);  // Clear canvas
+
+        // Background grids
+        drawGrid(context1,canvas1.width, canvas1.height); // Draw background grid
+
+        // Curve through points and vertices
+        drawCurve(context1, style, points); // Draw curve
+        //drawVertices(context1, style, points); // Draw vertices as circles
+        //lagrangeCalc();
+
+    }
+
+
+    // Draw a background grid
+    function drawGrid(myContext,bw,bh){
+        var delta = 50; // grid cell size
+
+        var half_width = bw/2;
+        var half_height = bh/2;
+        for (var x = -half_width; x <= half_width; x += delta) {
+            myContext.moveTo(x, -half_height);
+            myContext.lineTo(x, half_height);
+        }
+
+        for (var y = -half_height; y <= half_height; y += delta) {
+            myContext.moveTo(-half_width, y);
+            myContext.lineTo(half_width , y);
+        }
+
+        myContext.lineWidth = 1;
+        myContext.strokeStyle = "lightgray";
+        myContext.stroke();
+
+        myContext.fillStyle = "black";
+        myContext.font = "12px Arial";
+        myContext.fillText("(0,0)",2,12);
+
+    }
+
+    // Draws a polygonal curve connecting the points, after applying the given transformation
+    function drawCurve(ctx, style, points, transformation) {
+        // The transformation is optional. If none provided, use identity transform
+        if (transformation===undefined) {
+            transformation = function(p){return {x:p.x*100, y:p.y*100}}; //Identity transform
+        }
+
+        // Draw curve
+        ctx.lineWidth = style.curve.width;
+        ctx.strokeStyle = style.curve.color;
+        ctx.beginPath();
+        var firstPoint = transformation(points[0]);
+        var currentPoint;
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+        for (var i = 0; i < points.length; i++) {
+            currentPoint =  transformation(points[i]);
+            ctx.lineTo(currentPoint.x, currentPoint.y);
+            ctx.moveTo(currentPoint.x, currentPoint.y);
+        }
+        ctx.stroke();
+    }
+
+    // Draw circles around vertices to facilitate drag and drop
+    function drawVertices (ctx, style, points) {
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            ctx.lineWidth = style.point.width;
+            ctx.strokeStyle = style.point.color;
+            ctx.fillStyle = style.point.fill;
+            ctx.beginPath();
+            ctx.arc(p.x*100, p.y*100, style.point.radius, style.point.arc1, style.point.arc2, true);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+    function lagrangeCalc(){
+        //xi = 2i/(n-1)
+        
+        var numPoints = parseFloat(document.getElementsByName('startRange')[0].value);
+        if (numPoints == 0){
+            numPoints = 100;
+        }
+
+        var step = 10/numPoints;
+        lagrangePoints = [];
+        lagrangePointsInterpolated = [];
+        for(j=-5;j<=5;j+=step){
+            var punt = {x:0.,y:0.};
+            punt.x = j;
+            punt.y = (1/(1+25*Math.pow(j, 2)));
+            lagrangePoints.push(punt);
+        }
+        var step2 = 0.01;
+        for(l = -5; l <=5+step2; l += step2){
+            lagrangePointsInterpolated.push({x:l, y:lagrange4(l)});
+        }
+        //drawCanvas();
+        //console.log(lagrangePointsInterpolated);
+        //drawCurve(context1, style2, lagrangePoints); // Draw curve
+        drawVertices(context1, style2, lagrangePoints);
+        console.log("test");
+        drawCurve(context1, style3, lagrangePointsInterpolated); // Draw curve
+        console.log("test2");
+        //drawVertices(context1, style3, lagrangePointsInterpolated);
+        
+    }
+
+    function lagrange4(val){
+        //https://www.youtube.com/watch?v=O8sRg-tJTbA
+        
+        var point = 0.;
+        for(i = 0; i < lagrangePoints.length; ++i){
+            
+            var temp = 1.;
+            
+            for(k = 0; k < lagrangePoints.length; ++k){
+                if(i != k){
+                    temp *= ((val - lagrangePoints[k].x) / (lagrangePoints[i].x - lagrangePoints[k].x));
+                }
+            }
+            point += temp*lagrangePoints[i].y;
+
+        }
+        
+        //console.log("retorno = " + point);
+        return point;
+
+    }
+    /**
+     * Start ("main method")
+     */
+
+    // Assign canvas and context variables
+    canvas1 = document.getElementById("canvas1");
+    context1 = canvas1.getContext("2d");
+
+    init();
+
+    /**
+     * Auxiliary functions
+     */
+
+
+</script>
+</body>
+</html>

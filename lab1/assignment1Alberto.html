@@ -1,0 +1,566 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>DCS - 1</title>
+
+    <!--- Math.js library, for matrix manipulation, and many other things-->
+    <script src="math.min.js"></script>
+    <style>
+        .problem {
+            border: 1px solid  black;
+            width: 550px;
+            float:left;
+            margin: 3px;
+        }
+        table {
+            border: 1px solid black;
+            float: left;
+            margin: 3px;
+            
+        }
+
+        .simbolo {
+            float:left;
+        }
+
+        tr {
+            border: 1px solid black;
+        }
+
+        td {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>DCS - 1. Affine transformations</h1>
+
+<canvas id="canvas1" height="600" width="400" class="bezier"  style="border:1px solid #d3d3d3;"></canvas>
+<canvas id="canvas2" height="600" width="800" class="bezier"  style="border:1px solid #d3d3d3;"></canvas>
+<br>
+<div>
+    <button type="button" onclick="doReset()">Reset</button>
+    <button type="button" onclick="doScaling()">(Example) Scale by 0.5</button>        
+</div>
+
+<diV class="problem">
+    <h2>Problem 1 </h2>
+    <div>
+        <h3>Translation parameters</h3>
+        X: <input type="number" id="translation_x"  value="100"/>
+        Y: <input type="number" id="translation_y" value="100"/>
+        <button type="button" onclick="doTranslation()">Translation</button>
+    </div>
+
+    <div>
+        <h3>Rotation around the origin</h3>
+        Angle: <input type="number" id="rotation_angle" value="1.57079632679"/> radians
+        <button type="button" onclick="doRotationOrigin()">Rotate</button>
+    </div>
+
+    <div>
+        <h3>Scaling by &lambda; 1, &lambda; 2 with respect to the origin</h3>
+        &lambda; 1: <input type="number" id="scale_x" value="2"/>
+        &lambda; 2: <input type="number" id="scale_y" value="2"/>
+        <button type="button" onclick="doScaleOrigin()">Scale</button>
+    </div>
+
+    <div>
+        <h3>Reflection with respect to the x-axis</h3>
+        <button type="button" onclick="doReflectionXAxis()">Reflect</button>
+    </div>
+</diV>
+
+
+<diV class="problem">
+        <h2>Problem 2</h2>
+        <div>
+            <h3>Composition of translation and rotation</h3>
+            X: <input type="number" id="translation_rotation_x"  value="100"/>
+            Y: <input type="number" id="translation_rotation_y" value="100"/>
+            Angle: <input type="number" id="translation_rotation_angle" value="1.57079632679"/> radians
+            <button type="button" onclick="doTranslationRotation()">Transform</button>
+        </div>
+        <div>
+            <h3>Composition of rotation and translation</h3>
+            X: <input type="number" id="rotation_translation_x"  value="100"/>
+            Y: <input type="number" id="rotation_translation_y" value="100"/>
+            Angle: <input type="number" id="rotation_translation_angle" value="1.57079632679"/> radians
+            <button type="button" onclick="doRotationTranslation()">Transform</button>
+        </div>
+
+        <div>
+            <h3>Reflection with respect to a given line</h3>
+            Point x: <input type="number" id="reflection_point_x"  value="0"/>
+            Point y: <input type="number" id="reflection_point_y"  value="0"/>
+            Vector x: <input type="number" id="reflection_vector_x"  value="100"/>
+            Vector y: <input type="number" id="reflection_vector_x"  value="100"/>
+            <button type="button" onclick="doReflectionLine()">Transform</button>
+        </div>
+</diV>
+
+<div class="problem">
+    <h2>Problem 3</h2>
+    <div>
+        <h3>Parallel projection (2D to 1D)</h3>
+        u1: <input type="number" id="parallel_proyection_u1"  value="0"/>
+        u2: <input type="number" id="parallel_proyection_u2"  value="0"/>
+        <button type="button" onclick="doParallelProyection()">Transform</button>
+    </div>
+    <div>
+        <h3>Central projection (2D to 1D)</h3>
+        u1: <input type="number" id="center_proyection_u1"  value="0"/>
+        u2: <input type="number" id="center_proyection_u2"  value="0"/>
+        Proyection Plane: <input type="number" id="center_proyection_plane"  value="0"/>
+        <button type="button" onclick="doCenterProyection()">Transform</button>
+    </div>
+</div>
+
+<div class="problem">
+    <h2>Problem 4</h2>
+    <h3>Determine which of the projections implemented in Problem 3 preserve affine com-
+        binations. Illustrate that in your program. For example, by showing the same point
+        in the original and projected space, and showing the corresponding coordinates.
+    </h3>
+    <div>
+        Affine Combinations are preserved by Parallel projection because you can write it as: 
+
+        <table>
+            <tr>
+                <td>x'</td>
+            </tr>
+            <tr>
+                <td>y'</td>
+            </tr>
+            
+        </table>
+        <div class="simbolo">
+            =
+        </div>
+        <table>
+            <tr>
+                <td>1</td>
+                <td>-(u1/u2)</td>
+            </tr>
+            <tr>
+                <td>0</td>
+                <td>0</td>
+            </tr>
+        </table>
+        <div class="simbolo">
+            *
+        </div>
+        
+        <table>
+            <tr>
+                <td>x</td>
+            </tr>
+            <tr>
+                <td>y</td>
+            </tr>
+        </table>
+        <div class="simbolo">
+            =
+        </div>
+        <table>
+            <tr>
+                <td>x</td>
+                <td>-u1/u2*y</td>
+            </tr>
+            <tr>
+                <td>0</td>
+                <td>0</td>
+            </tr>
+        </table>
+    
+    </div>
+    <button type="button" onclick="doProblem4()">Demo</button>
+</div>
+<script type="text/javascript">
+
+    /*
+    * Part of this code is based on:
+        * http://blogs.sitepoint.com/html5-canvas-draw-quadratic-curves/
+        * http://blogs.sitepoint.com/html5-canvas-draw-bezier-curves/
+    */
+
+    var canvas1, canvas2, context1, context2, points, myTransformation, style, drag = null, draggedPoint;
+
+    points = [{ x:-150, y:-200 },{ x:-150, y:-150 },{ x:-50, y:-150 }, { x:-50, y:200 }, { x:0, y:200 },
+        { x:0, y:-150 },{ x:100, y:-150 },{ x:100, y:-250 },{ x:-100, y:-250 },{ x:-150, y:-200 }];
+
+    function init() {
+
+        myTransformation = function(p){return p}; //Identity transform
+
+        // default styles
+        style = {
+            curve:	{ width: 6, color: "#333" },
+            line:	{ width: 1, color: "#C00" },
+            point: { radius: 10, width: 2, color: "#900", fill: "rgba(200,200,200,0.5)", arc1: 0, arc2: 2 * Math.PI }
+        }
+
+        // line style defaults
+        context1.lineCap = "round";
+        context1.lineJoin = "round";
+
+        context2.lineCap = "round";
+        context2.lineJoin = "round";
+
+        // Translate origin to center of canvas
+        context1.translate(canvas1.width/2,canvas1.height/2);
+        context2.translate(canvas2.width/2,canvas2.height/2);
+
+        // event handlers (only canvas1)
+        canvas1.onmousedown = dragStart;
+        canvas1.onmousemove = dragging;
+        canvas1.onmouseup = canvas1.onmouseout = dragEnd;
+
+        drawCanvas();
+    }
+
+
+    /**
+     Basic drawing methods
+     **/
+
+
+    // draw canvas
+    function drawCanvas() {
+        // Clear everything
+        context1.clearRect(-canvas1.width/2, -canvas1.height/2, canvas1.width, canvas1.height);  // Clear canvas
+        context2.clearRect(-canvas2.width/2, -canvas2.height/2, canvas2.width, canvas2.height);  // Clear canvas
+
+        // Background grids
+        drawGrid(context1,canvas1.width, canvas1.height); // Draw background grid
+        drawGrid(context2,canvas2.width, canvas2.height); // Draw background grid
+
+        // Original points and vertices
+        drawCurve(context1, style, points); // Draw curve
+        drawVertices(context1, style, points); // Draw vertices as circles
+
+        // Transformed points
+        drawCurve(context2, style, points, myTransformation); // Draw curve transformed
+    }
+
+    function drawCanvas2() {
+        // Clear everything
+        context1.clearRect(-canvas1.width/2, -canvas1.height/2, canvas1.width, canvas1.height);  // Clear canvas
+        context2.clearRect(-canvas2.width/2, -canvas2.height/2, canvas2.width, canvas2.height);  // Clear canvas
+
+        // Background grids
+        drawGrid(context1,canvas1.width, canvas1.height); // Draw background grid
+        drawGrid(context2,canvas2.width, canvas2.height); // Draw background grid
+
+        // Original points and vertices
+        drawCurve(context1, style, points); // Draw curve
+        drawVertices(context1, style, points); // Draw vertices as circles
+
+        // Transformed points
+        drawCurve2(context2, style, points, myTransformation); // Draw curve transformed
+        drawVertices(context2, style, points, myTransformation); // Draw vertices as circles
+    }
+
+
+    // Draw a background grid
+    function drawGrid(myContext,bw,bh){
+        var delta = 50; // grid cell size
+
+        var half_width = bw/2;
+        var half_height = bh/2;
+        for (var x = -half_width; x <= half_width; x += delta) {
+            myContext.moveTo(x, -half_height);
+            myContext.lineTo(x, half_height);
+        }
+
+        for (var y = -half_height; y <= half_height; y += delta) {
+            myContext.moveTo(-half_width, y);
+            myContext.lineTo(half_width , y);
+        }
+
+        myContext.lineWidth = 1;
+        myContext.strokeStyle = "lightgray";
+        myContext.stroke();
+
+        myContext.fillStyle = "black";
+        myContext.font = "12px Arial";
+        myContext.fillText("(0,0)",2,12);
+
+    }
+
+    // Draws a polygonal curve connecting the points, after applying the given transformation
+    function drawCurve(ctx, style, points, transformation) {
+        // The transformation is optional. If none provided, use identity transform
+        if (transformation===undefined) {
+            transformation = function(p){return p}; //Identity transform
+        }
+
+        // Draw curve
+        ctx.lineWidth = style.curve.width;
+        ctx.strokeStyle = style.curve.color;
+        ctx.beginPath();
+        var firstPoint = transformation(points[0]);
+        var currentPoint;
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+        for (var i = 0; i < points.length; i++) {
+            currentPoint =  transformation(points[i]);
+            ctx.lineTo(currentPoint.x, currentPoint.y);
+            ctx.moveTo(currentPoint.x, currentPoint.y);
+        }
+        ctx.stroke();
+    }
+
+    // Draws a polygonal curve connecting the points, after applying the given transformation
+    function drawCurve2(ctx, style, points, transformation) {
+        // The transformation is optional. If none provided, use identity transform
+        if (transformation===undefined) {
+            transformation = function(p){return p}; //Identity transform
+        }
+
+        // Draw curve
+        ctx.lineWidth = style.curve.width;
+        ctx.strokeStyle = style.curve.color;
+        ctx.beginPath();
+        var firstPoint = transformation(points[0]);
+        
+        ctx.arc(firstPoint.x, firstPoint.y, style.point.radius, style.point.arc1, style.point.arc2, true);
+        ctx.fill();
+        ctx.stroke();
+        
+        
+        var currentPoint;
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+        for (var i = 0; i < points.length; i++) {
+            currentPoint =  transformation(points[i]);
+            ctx.lineTo(currentPoint.x, currentPoint.y);
+            ctx.moveTo(currentPoint.x, currentPoint.y);
+            ctx.arc(currentPoint.x, currentPoint.y, style.point.radius, style.point.arc1, style.point.arc2, true);
+            ctx.fill();
+            ctx.stroke();
+        }
+        ctx.stroke();
+    }
+
+    // Draw circles around vertices to facilitate drag and drop
+    function drawVertices (ctx, style, points) {
+        for (var i = 0; i < points.length; i++) {
+            var p = points[i];
+            ctx.lineWidth = style.point.width;
+            ctx.strokeStyle = style.point.color;
+            ctx.fillStyle = style.point.fill;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, style.point.radius, style.point.arc1, style.point.arc2, true);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+
+
+    /**
+     Methods to allow dragging transformedPoints around
+     **/
+
+    // start dragging
+    function dragStart(e) {
+        e = mousePos(e);
+        // Reverse translation to canvas1
+        var pos = fromCanvasToPointSpace(e);
+        var dx, dy;
+        for (var i=0; i<points.length;i++) {
+            dx = points[i].x - pos.x;
+            dy = points[i].y - pos.y;
+            if ((dx * dx) + (dy * dy) < style.point.radius * style.point.radius) {
+                drag = i;
+                draggedPoint = pos;
+                canvas1.style.cursor = "move";
+                return;
+            }
+        }
+    }
+
+    // dragging
+    function dragging(e) {
+        if (drag!=null) {
+            e = mousePos(e);
+            // Reverse translation to canvas1
+            var pos = fromCanvasToPointSpace(e);
+            points[drag].x += pos.x - draggedPoint.x;
+            points[drag].y += pos.y - draggedPoint.y;
+            draggedPoint = pos;
+            drawCanvas();
+        }
+    }
+
+    // end dragging
+    function dragEnd(e) {
+        drag = null;
+        canvas1.style.cursor = "default";
+        drawCanvas();
+    }
+
+    // event parser
+    function mousePos(event) {
+        event = (event ? event : window.event);
+        return {
+            x: event.pageX - canvas1.offsetLeft,
+            y: event.pageY - canvas1.offsetTop
+        }
+    }
+
+    // Transforms the coordinates of a point in canvas1 to one in the space of points
+    function fromCanvasToPointSpace(canvasPoint) {
+        return {x: canvasPoint.x - canvas1.width/2 , y: canvasPoint.y - canvas1.height/2};
+    }
+
+    /**
+     * Start ("main method")
+     */
+
+    // Assign canvas and context variables
+    canvas1 = document.getElementById("canvas1");
+    context1 = canvas1.getContext("2d");
+    canvas2 = document.getElementById("canvas2");
+    context2 = canvas2.getContext("2d");
+
+    init();
+
+    /**
+     * Auxiliary functions
+     */
+
+    var scalingFunction = function (point) {
+        var matrix = math.matrix([[0.5, 0], [0, 0.5]]); //2x2 scaling matrix (for 0.5)
+        var pointAsArray = [point.x, point.y];
+        var result = math.multiply(matrix,pointAsArray); // result is a matrix!
+        var transformedPoint = {x: result.get([0]),y: result.get([1])};
+        return transformedPoint;
+    }
+
+    function doReset () {
+        myTransformation = function(p){return p}; //Identity transform
+        drawCanvas();
+    }
+
+    function doTranslation() {
+        myTransformation = function(p) {
+            dx = parseInt(document.getElementById("translation_x").value) // translation_x
+            dy = parseInt(document.getElementById("translation_y").value) // translation_y
+            return { x:p.x + dx, y:p.y + dy};
+        }
+        drawCanvas();
+    }
+
+    function doRotationOrigin() {
+        myTransformation = function(p) {
+            alpha = parseFloat(document.getElementById("rotation_angle").value)
+            return { x: p.x * Math.cos(alpha) - p.y * Math.sin(alpha), 
+                     y: p.y * Math.cos(alpha) + p.x * Math.sin(alpha) };
+        }
+        drawCanvas();
+    }
+
+    function doScaleOrigin() {
+        myTransformation = function(p) {
+            s_x = parseFloat(document.getElementById("scale_x").value)
+            s_y = parseFloat(document.getElementById("scale_y").value)
+
+            return  {x: p.x*s_x, y: p.y*s_y};
+        }
+        drawCanvas();
+    }
+
+    function doReflectionXAxis() {
+        myTransformation = function(p) {
+            return {x: p.x, y:p.y *-1};
+        }
+        drawCanvas();
+    }
+
+    function doTranslationRotation() {
+        myTransformation = function(p) {
+            dx = parseInt(document.getElementById("translation_rotation_x").value) // translation_x
+            dy = parseInt(document.getElementById("translation_rotation_y").value) // translation_y
+            alpha = parseFloat(document.getElementById("translation_rotation_angle").value)
+
+            temp_x = p.x + dx;
+            temp_y = p.y + dy;
+
+            new_x = temp_x * Math.cos(alpha) - temp_y * Math.sin(alpha);
+            new_y = temp_y * Math.cos(alpha) + temp_x * Math.sin(alpha);
+
+            return {x: new_x, y: new_y};
+        }
+        drawCanvas();
+    }
+
+    function doRotationTranslation() {
+        myTransformation = function(p) {
+            dx = parseInt(document.getElementById("rotation_translation_x").value) // translation_x
+            dy = parseInt(document.getElementById("rotation_translation_y").value) // translation_y
+            alpha = parseFloat(document.getElementById("rotation_translation_angle").value)
+
+            temp_x = p.x * Math.cos(alpha) - p.y * Math.sin(alpha);
+            temp_y = p.y * Math.cos(alpha) + p.x * Math.sin(alpha);
+
+            new_x = temp_x + dx;
+            new_y = temp_y + dy;
+
+            return {x: new_x, y: new_y};
+        }
+        drawCanvas();
+    }
+
+    function doReflectionLine() {
+        myTransformation = function(p) {
+            
+        }
+        drawCanvas();
+    }
+
+    function doParallelProyection() {
+        myTransformation = function(p) {
+            u1 = parseFloat(document.getElementById("parallel_proyection_u1").value)
+            u2 = parseFloat(document.getElementById("parallel_proyection_u2").value)
+
+            return {x: p.x - ((u1/u2)*p.y), y: 0};
+        }
+        drawCanvas();
+    }
+
+    function doCenterProyection() {
+        myTransformation = function(p) {
+            u1 = parseFloat(document.getElementById("center_proyection_u1").value)
+            u2 = parseFloat(document.getElementById("center_proyection_u2").value)
+            plane = parseFloat(document.getElementById("center_proyection_plane").value)
+            
+            t =  plane / p.y;
+
+            return {x: p.x*t, y: p.y*t};
+        }
+        drawCanvas();
+    }
+
+    function doProblem4() {
+        myTransformation = function(p) {
+            u1 = parseFloat(document.getElementById("parallel_proyection_u1").value)
+            u2 = parseFloat(document.getElementById("parallel_proyection_u2").value)
+
+            return {x: p.x - ((u1/u2)*p.y), y: 0};
+        }
+
+        drawCanvas2();
+    }
+
+    // dev/sdd5 -> boot
+    // dev/sdd6 -> root
+    // dev/sdd7 -> swap
+    // dev/sdd8 -> home
+
+
+</script>
+</body>
+</html>
